@@ -38,13 +38,12 @@ const adminSchema = new mongoose.Schema({
 });
 
 adminSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password')) return ;
   
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
   } catch (error) {
-    next(error);
   }
 });
 

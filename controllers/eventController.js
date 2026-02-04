@@ -1,27 +1,47 @@
 import Event from '../models/Event.js';
-import { v2 as cloudinary } from 'cloudinary';
+import cloudinary from '../Config/cloudinary.js';
+
+const uploadToCloudinary = async (file) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'eventra_events',
+        resource_type: 'image'
+      },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result.secure_url);
+      }
+    );
+    uploadStream.end(file.buffer);
+  });
+};
 
 const createEvent = async (req, res) => {
   try {
-    const eventData = req.body;
+    const eventData = JSON.parse(JSON.stringify(req.body));
+    const imageUrls = [];
 
-    if (req.body.images && req.body.images.length > 0) {
-      const imageUploads = req.body.images.map(async (image) => {
-        const result = await cloudinary.uploader.upload(image, {
-          folder: 'eventra/events'
-        });
-        return result.secure_url;
-      });
-
-      eventData.images = await Promise.all(imageUploads);
-      eventData.featuredImage = eventData.images[0];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const url = await uploadToCloudinary(file);
+        imageUrls.push(url);
+      }
     }
+
+    const featuredImageIndex = parseInt(eventData.featuredImageIndex) || 0;
+    
+    eventData.images = imageUrls;
+    eventData.featuredImage = imageUrls[featuredImageIndex] || imageUrls[0] || '';
+    eventData.tags = eventData.tags ? eventData.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+    eventData.price = parseFloat(eventData.price);
+    eventData.capacity = parseInt(eventData.capacity);
+    eventData.isFeatured = eventData.isFeatured === 'true';
 
     const event = new Event(eventData);
     await event.save();
 
     res.status(201).json({ success: true, event });
-
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -50,7 +70,6 @@ const getAllEvents = async (req, res) => {
       currentPage: parseInt(page),
       totalEvents: total
     });
-
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -58,8 +77,11 @@ const getAllEvents = async (req, res) => {
 
 const getEventById = async (req, res) => {
   try {
+
+console.log("may here")
     const event = await Event.findById(req.params.id);
 
+    console.log(event)
     if (!event) {
       return res.status(404).json({
         success: false,
@@ -68,7 +90,6 @@ const getEventById = async (req, res) => {
     }
 
     res.json({ success: true, event });
-
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -76,22 +97,34 @@ const getEventById = async (req, res) => {
 
 const updateEvent = async (req, res) => {
   try {
-    const updates = req.body;
+    const updates = JSON.parse(JSON.stringify(req.body));
+    const imageUrls = [];
 
-    if (updates.images && updates.images.length > 0) {
-      const imageUploads = updates.images.map(async (image) => {
-        if (image.startsWith('http')) return image;
-
-        const result = await cloudinary.uploader.upload(image, {
-          folder: 'eventra/events'
-        });
-
-        return result.secure_url;
-      });
-
-      updates.images = await Promise.all(imageUploads);
-      updates.featuredImage = updates.images[0];
+    if (updates.existingImages) {
+      const existingImages = Array.isArray(updates.existingImages) 
+        ? updates.existingImages 
+        : [updates.existingImages];
+      imageUrls.push(...existingImages);
     }
+
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const url = await uploadToCloudinary(file);
+        imageUrls.push(url);
+      }
+    }
+
+    const featuredImageIndex = parseInt(updates.featuredImageIndex) || 0;
+
+    updates.images = imageUrls;
+    updates.featuredImage = imageUrls[featuredImageIndex] || imageUrls[0] || '';
+    updates.tags = updates.tags ? updates.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+    updates.price = parseFloat(updates.price);
+    updates.capacity = parseInt(updates.capacity);
+    updates.isFeatured = updates.isFeatured === 'true';
+
+    delete updates.existingImages;
+    delete updates.featuredImageIndex;
 
     const event = await Event.findByIdAndUpdate(
       req.params.id,
@@ -107,7 +140,6 @@ const updateEvent = async (req, res) => {
     }
 
     res.json({ success: true, event });
-
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -128,7 +160,6 @@ const deleteEvent = async (req, res) => {
       success: true,
       message: 'Event deleted successfully'
     });
-
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -141,7 +172,6 @@ const getCarouselEvents = async (req, res) => {
       .limit(10);
 
     res.json({ success: true, events });
-
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -165,7 +195,6 @@ const updateCarouselOrder = async (req, res) => {
       success: true,
       message: 'Carousel order updated'
     });
-
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

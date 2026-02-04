@@ -9,31 +9,22 @@ const DEFAULT_ADMIN_EMAIL = 'info@eventra.com';
 const DEFAULT_ADMIN_PASSWORD = 'event@eventra';
 
 const setupDefaultAdmin = async () => {
-  try {
-    const existingAdmin = await Admin.findOne({ email: DEFAULT_ADMIN_EMAIL });
-    
-    if (!existingAdmin) {
-      const hashedPassword = await bcrypt.hash(DEFAULT_ADMIN_PASSWORD, 10);
-      
-      const defaultAdmin = new Admin({
-        username: 'admin',
-        email: DEFAULT_ADMIN_EMAIL,
-        password: hashedPassword,
-        role: 'superadmin',
-        isActive: true
-      });
+  const existingAdmin = await Admin.findOne({ email: DEFAULT_ADMIN_EMAIL });
 
-      await defaultAdmin.save();
-      console.log('Default admin created successfully');
-      console.log(`Email: ${DEFAULT_ADMIN_EMAIL}`);
-      console.log(`Password: ${DEFAULT_ADMIN_PASSWORD}`);
-    } else {
-      console.log('Default admin already exists');
-    }
-  } catch (error) {
-    console.error('Error setting up default admin:', error);
+  if (!existingAdmin) {
+    const defaultAdmin = new Admin({
+      username: 'admin',
+      email: DEFAULT_ADMIN_EMAIL,
+      password: DEFAULT_ADMIN_PASSWORD, // ✅ plain here
+      role: 'superadmin',
+      isActive: true
+    });
+
+    await defaultAdmin.save();
+    console.log('Default admin created');
   }
 };
+
 
 const registerAdmin = async (req, res) => {
   try {
@@ -109,7 +100,7 @@ const loginAdmin = async (req, res) => {
     }
 
     const isMatch = await admin.comparePassword(password);
-    console.log("its matched")
+    console.log("its matched",isMatch)
     
     if (!isMatch) {
       return res.status(401).json({

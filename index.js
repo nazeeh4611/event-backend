@@ -4,11 +4,11 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cloudinary from 'cloudinary';
 import { setupDefaultAdmin } from './controllers/adminController.js';
-  // setupDefaultAdmin()
-  import eventRoutes from './Routes/eventRoutes.js';
-  import reservationRoutes from './Routes/reservationRoutes.js';
-  import guestListRoutes from './Routes/guestListRoutes.js';
-  import adminRoutes from './Routes/adminRoutes.js';
+import eventRoutes from './Routes/eventRoutes.js';
+import reservationRoutes from './Routes/reservationRoutes.js';
+import guestListRoutes from './Routes/guestListRoutes.js';
+import adminRoutes from './Routes/adminRoutes.js';
+
 dotenv.config();
 
 const app = express();
@@ -22,11 +22,11 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-          callback(null, true);
-      } else {
-          callback(new Error('Not allowed by CORS'));
-      }
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -39,14 +39,15 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-try {
-    await mongoose.connect(process.env.MONGODB_URI);
+mongoose.connect(process.env.MONGODB_URI)
+  .then(async () => {
     console.log('MongoDB connected');
-  } catch (err) {
+    await setupDefaultAdmin();
+  })
+  .catch((err) => {
     console.error('MongoDB connection failed:', err);
-  }
-  
-
+    process.exit(1);
+  });
 
 app.use('/api/events', eventRoutes);
 app.use('/api/reservations', reservationRoutes);
