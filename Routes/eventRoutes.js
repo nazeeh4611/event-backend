@@ -13,6 +13,7 @@ const upload = multer({
 
 router.get('/', eventController.getAllEvents);
 router.get('/carousel', eventController.getCarouselEvents);
+router.put('/:id/carousel', authenticateAdmin, authorizeRole('admin','superadmin'), eventController.updateCarouselStatus);
 
 router.post('/', authenticateAdmin, authorizeRole('admin','superadmin'), upload.array('images',10), eventController.createEvent);
 
@@ -22,7 +23,6 @@ router.delete('/:id', authenticateAdmin, authorizeRole('superadmin'), eventContr
 
 router.put('/carousel/order', authenticateAdmin, authorizeRole('admin','superadmin'), eventController.updateCarouselOrder);
 
-// ✅ LAST
 router.get('/:id', eventController.getEventById);
 
 export default router;

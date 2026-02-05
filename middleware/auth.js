@@ -3,6 +3,8 @@ import Admin from '../models/Admin.js';
 
 const authenticateAdmin = async (req, res, next) => {
   try {
+
+    console.log("first")
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {

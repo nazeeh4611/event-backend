@@ -77,11 +77,8 @@ const getAllEvents = async (req, res) => {
 
 const getEventById = async (req, res) => {
   try {
-
-console.log("may here")
     const event = await Event.findById(req.params.id);
 
-    console.log(event)
     if (!event) {
       return res.status(404).json({
         success: false,
@@ -200,6 +197,43 @@ const updateCarouselOrder = async (req, res) => {
   }
 };
 
+const updateCarouselStatus = async (req, res) => {
+  try {
+    const { isFeatured, carouselPosition } = req.body;
+    
+    const updateData = {};
+    
+    if (isFeatured !== undefined) {
+      updateData.isFeatured = isFeatured;
+    }
+    
+    if (carouselPosition !== undefined) {
+      updateData.carouselPosition = carouselPosition;
+    }
+
+    const event = await Event.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        error: 'Event not found'
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Carousel status updated',
+      event 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 export default {
   createEvent,
   getAllEvents,
@@ -207,5 +241,6 @@ export default {
   updateEvent,
   deleteEvent,
   getCarouselEvents,
-  updateCarouselOrder
+  updateCarouselOrder,
+  updateCarouselStatus
 };
