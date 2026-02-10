@@ -4,9 +4,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cloudinary from 'cloudinary';
 import { setupDefaultAdmin } from './controllers/adminController.js';
-import adminRoutes from './routes/adminRoutes.js';
-import hosterRoutes from './routes/hosterRoutes.js';
-import userRoutes from './routes/userRoute.js';
+import adminRoutes from './Routes/adminRoutes.js';
+import hosterRoutes from './Routes/hosterRoutes.js';
+import userRoutes from './Routes/userRoute.js';
+
 
 dotenv.config();
 
