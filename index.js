@@ -17,7 +17,8 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 const allowedOrigins = [
-  'https://www.eventra.club/events',
+  'www.eventra.club',
+  'https://www.eventra.club',
   'https://eventra.club',
   'http://localhost:5173',
   'https://eventra-uae.vercel.app'
