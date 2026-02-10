@@ -6,18 +6,8 @@ const router = express.Router();
 
 router.post('/', reservationController.createReservation);
 
-router.get(
-  '/',
-  authenticateAdmin,
-  authorizeRole('admin', 'superadmin', 'moderator'),
-  reservationController.getReservations
-);
+router.get('/', authenticateAdmin, reservationController.getReservations);
 
-router.put(
-  '/:id/status',
-  authenticateAdmin,
-  authorizeRole('admin', 'superadmin', 'moderator'),
-  reservationController.updateReservationStatus
-);
+router.put('/:id/status', authenticateAdmin, reservationController.updateReservationStatus);
 
 export default router;

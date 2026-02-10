@@ -6,7 +6,15 @@ const reservationSchema = new mongoose.Schema({
     ref: 'Event',
     required: true
   },
+  hosterId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Hoster'
+  },
   fullName: {
+    type: String,
+    required: true
+  },
+  email: {
     type: String,
     required: true
   },
@@ -19,6 +27,14 @@ const reservationSchema = new mongoose.Schema({
     required: true,
     min: 1
   },
+  totalAmount: {
+    type: Number,
+    required: true
+  },
+  commissionAmount: {
+    type: Number,
+    default: 0
+  },
   specialRequirements: {
     type: String
   },
@@ -28,8 +44,18 @@ const reservationSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'cancelled'],
+    enum: ['pending', 'confirmed', 'cancelled', 'refunded'],
     default: 'pending'
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'failed', 'refunded'],
+    default: 'pending'
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['card', 'cash', 'bank_transfer', 'other'],
+    default: 'card'
   }
 });
 

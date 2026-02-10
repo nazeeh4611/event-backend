@@ -21,7 +21,7 @@ const adminSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['superadmin', 'admin', 'moderator'],
+    enum: ['superadmin', 'admin'],
     default: 'admin'
   },
   lastLogin: {
@@ -38,12 +38,12 @@ const adminSchema = new mongoose.Schema({
 });
 
 adminSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return ;
-  
+  if (!this.isModified('password')) return next();
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
   } catch (error) {
+   console.error(error)
   }
 });
 
@@ -51,6 +51,4 @@ adminSchema.methods.comparePassword = async function(password) {
   return await bcrypt.compare(password, this.password);
 };
 
-const Admin = mongoose.model('Admin', adminSchema);
-
-export default Admin;
+export default mongoose.model('Admin', adminSchema);

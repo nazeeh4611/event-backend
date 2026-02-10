@@ -4,34 +4,14 @@ import { authenticateAdmin, authorizeRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.post('/', guestListController.addToGuestList);
+router.post('/', authenticateAdmin, authorizeRole('hoster', 'superadmin'), guestListController.addToGuestList);
 
-router.get(
-  '/',
-  authenticateAdmin,
-  authorizeRole('admin', 'superadmin', 'moderator'),
-  guestListController.getGuestList
-);
+router.get('/', authenticateAdmin, guestListController.getGuestList);
 
-router.put(
-  '/:id',
-  authenticateAdmin,
-  authorizeRole('admin', 'superadmin', 'moderator'),
-  guestListController.updateGuest
-);
+router.put('/:id', authenticateAdmin, guestListController.updateGuest);
 
-router.put(
-  '/:id/checkin',
-  authenticateAdmin,
-  authorizeRole('admin', 'superadmin', 'moderator'),
-  guestListController.checkInGuest
-);
+router.put('/:id/checkin', authenticateAdmin, guestListController.checkInGuest);
 
-router.delete(
-  '/:id',
-  authenticateAdmin,
-  authorizeRole('admin', 'superadmin'),
-  guestListController.deleteGuest
-);
+router.delete('/:id', authenticateAdmin, guestListController.deleteGuest);
 
 export default router;

@@ -38,13 +38,19 @@ const createReservation = async (req, res) => {
 const getReservations = async (req, res) => {
   try {
     const { eventId, status, page = 1, limit = 20 } = req.query;
-    const query = {};
+    let query = {};
 
     if (eventId) query.eventId = eventId;
     if (status) query.status = status;
 
+    if (req.admin.role === 'hoster') {
+      const events = await Event.find({ createdBy: req.admin._id }).select('_id');
+      const eventIds = events.map(e => e._id);
+      query.eventId = { $in: eventIds };
+    }
+
     const reservations = await Reservation.find(query)
-      .populate('eventId', 'title date venue')
+      .populate('eventId', 'title date venue createdBy')
       .sort({ reservationDate: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
@@ -68,12 +74,8 @@ const updateReservationStatus = async (req, res) => {
   try {
     const { status } = req.body;
 
-    const reservation = await Reservation.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    ).populate('eventId');
-
+    const reservation = await Reservation.findById(req.params.id).populate('eventId');
+    
     if (!reservation) {
       return res.status(404).json({
         success: false,
@@ -81,7 +83,20 @@ const updateReservationStatus = async (req, res) => {
       });
     }
 
-    res.json({ success: true, reservation });
+    if (req.admin.role === 'hoster' && reservation.eventId.createdBy.toString() !== req.admin._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to update this reservation'
+      });
+    }
+
+    const updatedReservation = await Reservation.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    ).populate('eventId');
+
+    res.json({ success: true, reservation: updatedReservation });
 
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

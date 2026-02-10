@@ -4,10 +4,9 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cloudinary from 'cloudinary';
 import { setupDefaultAdmin } from './controllers/adminController.js';
-import eventRoutes from './Routes/eventRoutes.js';
-import reservationRoutes from './Routes/reservationRoutes.js';
-import guestListRoutes from './Routes/guestListRoutes.js';
-import adminRoutes from './Routes/adminRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import hosterRoutes from './routes/hosterRoutes.js';
+import userRoutes from './routes/userRoute.js';
 
 dotenv.config();
 
@@ -15,6 +14,7 @@ const app = express();
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
 
 const allowedOrigins = [
   'www.eventra.club',
@@ -37,6 +37,7 @@ app.use(cors({
   credentials: true
 }));
 
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -46,17 +47,16 @@ cloudinary.config({
 mongoose.connect(process.env.MONGODB_URI)
   .then(async () => {
     console.log('MongoDB connected');
-    await setupDefaultAdmin();
+    // await setupDefaultAdmin();
   })
   .catch((err) => {
     console.error('MongoDB connection failed:', err);
     process.exit(1);
   });
 
-app.use('/api/events', eventRoutes);
-app.use('/api/reservations', reservationRoutes);
-app.use('/api/guestlist', guestListRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/hoster', hosterRoutes);
+app.use('/api', userRoutes);
 
-const PORT = process.env.PORT || 5005;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -6,7 +6,15 @@ const guestListSchema = new mongoose.Schema({
     ref: 'Event',
     required: true
   },
+  hosterId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Hoster'
+  },
   guestName: {
+    type: String,
+    required: true
+  },
+  email: {
     type: String,
     required: true
   },
@@ -14,6 +22,8 @@ const guestListSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  company: String,
+  position: String,
   plusOnes: {
     type: Number,
     default: 0
@@ -36,6 +46,11 @@ const guestListSchema = new mongoose.Schema({
   },
   notes: {
     type: String
+  },
+  addedBy: {
+    type: String,
+    enum: ['admin', 'hoster', 'user'],
+    default: 'hoster'
   },
   addedAt: {
     type: Date,

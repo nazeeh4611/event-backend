@@ -3,7 +3,8 @@ import mongoose from 'mongoose';
 const eventSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   description: {
     type: String,
@@ -11,7 +12,8 @@ const eventSchema = new mongoose.Schema({
   },
   shortDescription: {
     type: String,
-    required: true
+    required: true,
+    maxlength: 150
   },
   venue: {
     type: String,
@@ -29,13 +31,16 @@ const eventSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  endDate: Date,
+  endTime: String,
   category: {
     type: String,
     required: true
   },
   price: {
     type: Number,
-    required: true
+    required: true,
+    min: 0
   },
   images: [{
     type: String
@@ -43,8 +48,9 @@ const eventSchema = new mongoose.Schema({
   featuredImage: {
     type: String
   },
-  organizer: {
-    type: String,
+  hosterId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Hoster',
     required: true
   },
   contactEmail: {
@@ -55,12 +61,14 @@ const eventSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  website: String,
   tags: [{
     type: String
   }],
   capacity: {
     type: Number,
-    required: true
+    required: true,
+    min: 1
   },
   bookedSeats: {
     type: Number,
@@ -72,17 +80,46 @@ const eventSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['upcoming', 'ongoing', 'completed', 'cancelled'],
-    default: 'upcoming'
+    enum: ['draft', 'live', 'completed', 'cancelled'],
+    default: 'draft'
   },
   carouselPosition: {
     type: Number,
     default: 0
   },
+  commission: {
+    rate: {
+      type: Number,
+      default: 10,
+      min: 0,
+      max: 100
+    },
+    amount: {
+      type: Number,
+      default: 0
+    }
+  },
+  eventType: {
+    type: String,
+    enum: ['physical', 'virtual', 'hybrid'],
+    default: 'physical'
+  },
+  virtualLink: String,
+  requirements: String,
+  terms: String,
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
+});
+
+eventSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
 });
 
 export default mongoose.model('Event', eventSchema);
