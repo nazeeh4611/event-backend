@@ -29,6 +29,7 @@ export const registerHoster = async (req, res) => {
       contactPerson,
       email,
       phone,
+      whatsappNumber,
       password,
       address,
       taxNumber,
@@ -48,11 +49,13 @@ export const registerHoster = async (req, res) => {
       contactPerson,
       email,
       phone,
+      whatsappNumber: whatsappNumber || '',
       password,
       address: address ? JSON.parse(address) : {},
-      taxNumber,
-      website,
-      status: 'pending'
+      taxNumber: taxNumber || '',
+      website: website || '',
+      status: 'pending',
+      isActive: true
     });
     
     await hoster.save();
@@ -123,9 +126,38 @@ export const loginHoster = async (req, res) => {
         companyName: hoster.companyName,
         contactPerson: hoster.contactPerson,
         email: hoster.email,
+        phone: hoster.phone,
+        whatsappNumber: hoster.whatsappNumber,
         status: hoster.status
       }
     });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const verifyCurrentPassword = async (req, res) => {
+  try {
+    const hosterId = req.user.id;
+    const { currentPassword } = req.body;
+    
+    const hoster = await Hoster.findById(hosterId);
+    if (!hoster) {
+      return res.status(404).json({
+        success: false,
+        error: 'Hoster not found'
+      });
+    }
+    
+    const isMatch = await hoster.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        error: 'Current password is incorrect'
+      });
+    }
+    
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -141,7 +173,7 @@ export const getHosterDashboard = async (req, res) => {
     const totalEvents = await Event.countDocuments({ hosterId });
     const activeEvents = await Event.countDocuments({ 
       hosterId, 
-      status: 'live',
+      status: { $in: ['live', 'upcoming', 'ongoing'] },
       date: { $gte: today }
     });
     
@@ -181,7 +213,7 @@ export const getHosterDashboard = async (req, res) => {
       .limit(5);
     
     const recentReservations = await Reservation.find({ hosterId })
-      .populate('eventId', 'title')
+      .populate('eventId', 'title date')
       .sort({ reservationDate: -1 })
       .limit(10);
     
@@ -225,16 +257,15 @@ export const createEvent = async (req, res) => {
     eventData.images = imageUrls;
     eventData.featuredImage = imageUrls[featuredImageIndex] || imageUrls[0] || '';
     eventData.tags = eventData.tags ? eventData.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
-    eventData.price = parseFloat(eventData.price);
-    eventData.capacity = parseInt(eventData.capacity);
-    eventData.status = 'pending';
+    eventData.price = parseFloat(eventData.price) || 0;
+    eventData.capacity = parseInt(eventData.capacity) || 0;
     
     const event = new Event(eventData);
     await event.save();
     
     res.status(201).json({ 
       success: true, 
-      message: 'Event created successfully. Waiting for admin approval.',
+      message: 'Event created successfully',
       event 
     });
   } catch (error) {
@@ -248,7 +279,7 @@ export const getHosterEvents = async (req, res) => {
     const { status, page = 1, limit = 10 } = req.query;
     
     const query = { hosterId };
-    if (status) query.status = status;
+    if (status && status !== 'all') query.status = status;
     
     const events = await Event.find(query)
       .sort({ createdAt: -1 })
@@ -304,10 +335,6 @@ export const updateEvent = async (req, res) => {
       });
     }
     
-    if (event.status === 'approved' || event.status === 'live') {
-      updates.status = 'pending';
-    }
-    
     const imageUrls = [];
     if (updates.existingImages) {
       const existingImages = Array.isArray(updates.existingImages) 
@@ -328,8 +355,8 @@ export const updateEvent = async (req, res) => {
     updates.images = imageUrls;
     updates.featuredImage = imageUrls[featuredImageIndex] || imageUrls[0] || '';
     updates.tags = updates.tags ? updates.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
-    updates.price = parseFloat(updates.price);
-    updates.capacity = parseInt(updates.capacity);
+    updates.price = parseFloat(updates.price) || 0;
+    updates.capacity = parseInt(updates.capacity) || 0;
     
     delete updates.existingImages;
     delete updates.featuredImageIndex;
@@ -365,9 +392,41 @@ export const deleteEvent = async (req, res) => {
       });
     }
     
+    await GuestList.deleteMany({ eventId: req.params.id, hosterId });
+    await Reservation.deleteMany({ eventId: req.params.id, hosterId });
+    
     res.json({
       success: true,
       message: 'Event deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const updateEventStatus = async (req, res) => {
+  try {
+    const hosterId = req.user.id;
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    const event = await Event.findOneAndUpdate(
+      { _id: id, hosterId },
+      { status },
+      { new: true, runValidators: true }
+    );
+    
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        error: 'Event not found'
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `Event status updated to ${status}`,
+      event 
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -472,7 +531,8 @@ export const addGuest = async (req, res) => {
     
     const existingGuest = await GuestList.findOne({
       eventId: guestData.eventId,
-      email: guestData.email
+      email: guestData.email,
+      hosterId
     });
     
     if (existingGuest) {
@@ -526,7 +586,7 @@ export const checkInGuest = async (req, res) => {
         checkInTime: new Date()
       },
       { new: true }
-    );
+    ).populate('eventId');
     
     if (!guest) {
       return res.status(404).json({
@@ -588,9 +648,29 @@ export const updateHosterProfile = async (req, res) => {
     const hosterId = req.user.id;
     const updates = req.body;
     
-    if (updates.password) {
+    if (updates.newPassword) {
+      const hoster = await Hoster.findById(hosterId);
+      
+      if (!updates.currentPassword) {
+        return res.status(400).json({
+          success: false,
+          error: 'Current password is required'
+        });
+      }
+      
+      const isMatch = await hoster.comparePassword(updates.currentPassword);
+      if (!isMatch) {
+        return res.status(400).json({
+          success: false,
+          error: 'Current password is incorrect'
+        });
+      }
+      
       const salt = await bcrypt.genSalt(10);
-      updates.password = await bcrypt.hash(updates.password, salt);
+      updates.password = await bcrypt.hash(updates.newPassword, salt);
+      
+      delete updates.currentPassword;
+      delete updates.newPassword;
     }
     
     const hoster = await Hoster.findByIdAndUpdate(
@@ -598,6 +678,13 @@ export const updateHosterProfile = async (req, res) => {
       updates,
       { new: true, runValidators: true }
     ).select('-password');
+    
+    if (!hoster) {
+      return res.status(404).json({
+        success: false,
+        error: 'Hoster not found'
+      });
+    }
     
     res.json({
       success: true,

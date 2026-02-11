@@ -1,5 +1,6 @@
 import express from 'express';
 import multer from 'multer';
+import { authenticateHoster } from '../middleware/auth.js';
 import {
   registerHoster,
   loginHoster,
@@ -9,6 +10,7 @@ import {
   getEventById,
   updateEvent,
   deleteEvent,
+  updateEventStatus,
   getHosterReservations,
   updateReservationStatus,
   getHosterGuests,
@@ -17,38 +19,37 @@ import {
   checkInGuest,
   deleteGuest,
   getHosterProfile,
-  updateHosterProfile
+  updateHosterProfile,
+  verifyCurrentPassword
 } from '../controllers/hosterController.js';
-import { authenticateHoster } from '../middleware/auth.js';
 
 const router = express.Router();
-const storage = multer.memoryStorage();
 const upload = multer({ 
-  storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
 
 router.post('/register', registerHoster);
 router.post('/login', loginHoster);
 
-router.get('/dashboard', authenticateHoster, getHosterDashboard);
+router.use(authenticateHoster);
 
-router.post('/events', authenticateHoster, upload.array('images', 10), createEvent);
-router.get('/events', authenticateHoster, getHosterEvents);
-router.get('/events/:id', authenticateHoster, getEventById);
-router.put('/events/:id', authenticateHoster, upload.array('images', 10), updateEvent);
-router.delete('/events/:id', authenticateHoster, deleteEvent);
-
-router.get('/reservations', authenticateHoster, getHosterReservations);
-router.put('/reservations/:id/status', authenticateHoster, updateReservationStatus);
-
-router.get('/guests', authenticateHoster, getHosterGuests);
-router.post('/guests', authenticateHoster, addGuest);
-router.put('/guests/:id', authenticateHoster, updateGuest);
-router.put('/guests/:id/checkin', authenticateHoster, checkInGuest);
-router.delete('/guests/:id', authenticateHoster, deleteGuest);
-
-router.get('/profile', authenticateHoster, getHosterProfile);
-router.put('/profile', authenticateHoster, updateHosterProfile);
+router.get('/dashboard', getHosterDashboard);
+router.get('/profile', getHosterProfile);
+router.put('/profile', updateHosterProfile);
+router.post('/profile/verify-password', verifyCurrentPassword);
+router.get('/events', getHosterEvents);
+router.get('/events/:id', getEventById);
+router.post('/events', upload.array('images', 10), createEvent);
+router.put('/events/:id', upload.array('images', 10), updateEvent);
+router.delete('/events/:id', deleteEvent);
+router.put('/events/:id/status', updateEventStatus);
+router.get('/reservations', getHosterReservations);
+router.put('/reservations/:id', updateReservationStatus);
+router.get('/guests', getHosterGuests);
+router.post('/guests', addGuest);
+router.put('/guests/:id', updateGuest);
+router.put('/guests/:id/checkin', checkInGuest);
+router.delete('/guests/:id', deleteGuest);
 
 export default router;

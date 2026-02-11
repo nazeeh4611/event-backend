@@ -6,17 +6,25 @@ import {
   getCarouselEvents,
   searchEvents,
   getEventsByCategory,
-  getFeaturedEvents
+  getFeaturedEvents,
+  addToGuestList,
+  checkReservationStatus,
+  getUpcomingEvents,
+  getAllCategories
 } from '../controllers/userController.js';
 
 const router = express.Router();
 
-router.get('/events', getPublicEvents);
-router.get('/events/search', searchEvents);
-router.get('/events/category/:category', getEventsByCategory);
-router.get('/events/featured', getFeaturedEvents);
-router.get('/events/:id', getEventDetails);
-router.post('/reservations', createReservation);
 router.get('/carousel', getCarouselEvents);
+router.get('/allevents', getPublicEvents);
+router.get('/allevents/upcoming', getUpcomingEvents);
+router.get('/allevents/search', searchEvents);
+router.get('/allevents/featured', getFeaturedEvents);
+router.get('/allevents/category/:category', getEventsByCategory);
+router.get('/allevents/:id', getEventDetails);
+router.get('/categories', getAllCategories);
+router.post('/reservations', createReservation);
+router.get('/reservations/status', checkReservationStatus);
+router.post('/guestlist', addToGuestList);
 
 export default router;

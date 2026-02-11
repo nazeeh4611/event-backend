@@ -13,7 +13,7 @@ const eventSchema = new mongoose.Schema({
   shortDescription: {
     type: String,
     required: true,
-    maxlength: 150
+    maxlength: 200
   },
   venue: {
     type: String,
@@ -37,10 +37,18 @@ const eventSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  subCategory: {
+    type: String,
+    default: ''
+  },
   price: {
     type: Number,
     required: true,
     min: 0
+  },
+  currency: {
+    type: String,
+    default: 'USD'
   },
   images: [{
     type: String
@@ -61,7 +69,13 @@ const eventSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  contactWhatsapp: {
+    type: String,
+    default: ''
+  },
   website: String,
+  facebook: String,
+  instagram: String,
   tags: [{
     type: String
   }],
@@ -74,14 +88,25 @@ const eventSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  availableSeats: {
+    type: Number,
+    default: function() {
+      return this.capacity - this.bookedSeats;
+    }
+  },
   isFeatured: {
     type: Boolean,
     default: false
   },
   status: {
     type: String,
-    enum: ['draft', 'live', 'completed', 'cancelled'],
-    default: 'draft'
+    enum: ['draft', 'pending', 'live', 'upcoming', 'ongoing', 'completed', 'cancelled'],
+    default: 'pending'
+  },
+  adminApproval: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
   },
   carouselPosition: {
     type: Number,
@@ -105,21 +130,42 @@ const eventSchema = new mongoose.Schema({
     default: 'physical'
   },
   virtualLink: String,
+  virtualPlatform: String,
   requirements: String,
   terms: String,
-  createdAt: {
-    type: Date,
-    default: Date.now
+  refundPolicy: String,
+  views: {
+    type: Number,
+    default: 0
   },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  likes: {
+    type: Number,
+    default: 0
+  },
+  shares: {
+    type: Number,
+    default: 0
+  }
+}, { timestamps: true });
+
+eventSchema.pre('save', function() {
+  this.availableSeats = this.capacity - this.bookedSeats;
+});
+
+eventSchema.pre('findOneAndUpdate', function() {
+  const update = this.getUpdate();
+  if (update.capacity !== undefined || update.bookedSeats !== undefined) {
+    const capacity = update.capacity || update.$set?.capacity;
+    const bookedSeats = update.bookedSeats || update.$set?.bookedSeats || 0;
+    if (capacity !== undefined) {
+      update.availableSeats = capacity - bookedSeats;
+      if (update.$set) update.$set.availableSeats = capacity - bookedSeats;
+    }
   }
 });
 
-eventSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
-});
+eventSchema.index({ hosterId: 1, status: 1, date: -1 });
+eventSchema.index({ category: 1, status: 1 });
+eventSchema.index({ date: 1, status: 1 });
 
 export default mongoose.model('Event', eventSchema);

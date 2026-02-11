@@ -8,7 +8,12 @@ const guestListSchema = new mongoose.Schema({
   },
   hosterId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Hoster'
+    ref: 'Hoster',
+    required: true
+  },
+  reservationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Reservation'
   },
   guestName: {
     type: String,
@@ -16,46 +21,65 @@ const guestListSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: true
+    default: ''
   },
   phone: {
     type: String,
     required: true
   },
-  company: String,
-  position: String,
-  plusOnes: {
-    type: Number,
-    default: 0
+  whatsapp: {
+    type: String,
+    default: ''
   },
-  invitationSent: {
-    type: Boolean,
-    default: false
+  additionalGuests: [{
+    name: String,
+    email: String,
+    phone: String
+  }],
+  numberOfGuests: {
+    type: Number,
+    default: 1,
+    min: 1,
+    max: 10
   },
   rsvpStatus: {
     type: String,
-    enum: ['pending', 'confirmed', 'declined'],
+    enum: ['pending', 'confirmed', 'declined', 'attended'],
     default: 'pending'
   },
   checkedIn: {
     type: Boolean,
     default: false
   },
-  checkInTime: {
-    type: Date
+  checkInTime: Date,
+  checkInBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Hoster'
   },
-  notes: {
-    type: String
+  ticketType: {
+    type: String,
+    default: 'regular'
   },
+  ticketPrice: {
+    type: Number,
+    default: 0
+  },
+  specialRequests: String,
+  notes: String,
   addedBy: {
     type: String,
-    enum: ['admin', 'hoster', 'user'],
+    enum: ['hoster', 'admin', 'customer', 'system'],
     default: 'hoster'
   },
   addedAt: {
     type: Date,
     default: Date.now
   }
-});
+}, { timestamps: true });
+
+guestListSchema.index({ eventId: 1, phone: 1 }, { unique: true });
+guestListSchema.index({ eventId: 1, email: 1 });
+guestListSchema.index({ hosterId: 1, eventId: 1 });
+guestListSchema.index({ rsvpStatus: 1, checkedIn: 1 });
 
 export default mongoose.model('GuestList', guestListSchema);

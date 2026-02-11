@@ -11,6 +11,8 @@ import {
   getEventReservations,
   getEventGuests,
   getCarouselEvents,
+  addToCarousel,
+  removeFromCarousel,
   updateCarouselOrder
 } from '../controllers/adminController.js';
 import { authenticateAdmin } from '../middleware/auth.js';
@@ -29,7 +31,10 @@ adminRoutes.put('/events/:id/status', authenticateAdmin, updateEventStatus);
 adminRoutes.get('/events/:eventId/reservations', authenticateAdmin, getEventReservations);
 adminRoutes.get('/events/:eventId/guests', authenticateAdmin, getEventGuests);
 
+// Carousel routes
 adminRoutes.get('/carousel', getCarouselEvents);
+adminRoutes.post('/carousel', authenticateAdmin, addToCarousel);
+adminRoutes.delete('/carousel/:eventId', authenticateAdmin, removeFromCarousel);
 adminRoutes.put('/carousel/order', authenticateAdmin, updateCarouselOrder);
 
 export default adminRoutes;
