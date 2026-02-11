@@ -4,7 +4,7 @@ import Reservation from '../models/Reservation.js';
 import GuestList from '../models/GuestList.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import cloudinary from '../config/cloudinary.js';
+import cloudinary from '../Config/cloudinary.js';
 
 const uploadToCloudinary = async (file) => {
   return new Promise((resolve, reject) => {
