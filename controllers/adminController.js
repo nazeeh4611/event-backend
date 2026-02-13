@@ -521,6 +521,7 @@ export const updateEventStatus = async (req, res) => {
 // ==================== RESERVATION MANAGEMENT ====================
 export const getEventReservations = async (req, res) => {
   try {
+    console.log("may heree")
     const { eventId } = req.params;
     const { status, page = 1, limit = 20 } = req.query;
     
@@ -529,7 +530,7 @@ export const getEventReservations = async (req, res) => {
     
     const reservations = await Reservation.find(query)
       .populate('eventId', 'title date venue')
-      .populate('fullname email phone')
+      .populate('fullName email phone')
       .sort({ reservationDate: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
